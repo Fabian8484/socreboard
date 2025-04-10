@@ -1,47 +1,97 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Game Scoreboard</title>
+  <title>Dance Revolution Scoreboard</title>
   <style>
-    body { font-family: Arial, sans-serif; padding: 20px; }
-    table { border-collapse: collapse; width: 100%; }
+    body { font-family: Arial, sans-serif; padding: 20px; background: #f9f9f9; }
+    h2 { margin-top: 40px; }
+    table { border-collapse: collapse; width: 100%; margin-bottom: 40px; }
     th, td { border: 1px solid #ddd; padding: 8px; text-align: center; }
     th { background-color: #f2f2f2; }
+    .section-title { font-size: 1.4em; margin-bottom: 10px; }
   </style>
 </head>
 <body>
-  <h2>🎮 Dance Revolution Scoreboard</h2>
-  <table>
-    <thead>
-      <tr>
-        <th>Time</th>
-        <th>Player ID</th>
-        <th>Score</th>
-      </tr>
-    </thead>
-    <tbody id="scoreboard"></tbody>
-  </table>
+  <h1>🎮 Dance Revolution Scoreboard</h1>
+
+  <div>
+    <div class="section-title">🏆 Top 5 Highest Scores</div>
+    <table>
+      <thead>
+        <tr>
+          <th>Player ID</th>
+          <th>Score</th>
+          <th>Time</th>
+        </tr>
+      </thead>
+      <tbody id="topScores"></tbody>
+    </table>
+  </div>
+
+  <div>
+    <div class="section-title">🕒 10 Most Recent Scores</div>
+    <table>
+      <thead>
+        <tr>
+          <th>Time</th>
+          <th>Player ID</th>
+          <th>Score</th>
+        </tr>
+      </thead>
+      <tbody id="recentScores"></tbody>
+    </table>
+  </div>
 
   <script>
     const channelID = "2913791";
     const readAPIKey = "4JKR3JNN5CCA45UZ";
-    const resultCount = 10; // Number of rows to show
+    const fetchCount = 50; // Get more entries to ensure we can find the top 5
 
-    const url = `https://api.thingspeak.com/channels/${channelID}/feeds.json?api_key=${readAPIKey}&results=${resultCount}`;
+    const url = `https://api.thingspeak.com/channels/${channelID}/feeds.json?api_key=${readAPIKey}&results=${fetchCount}`;
 
     fetch(url)
       .then(response => response.json())
       .then(data => {
-        const table = document.getElementById('scoreboard');
-        data.feeds.forEach(feed => {
+        const feeds = data.feeds;
+
+        // Filter out entries that are missing player ID or score
+        const validEntries = feeds.filter(f => f.field1 && f.field2 && !isNaN(f.field2));
+
+        // --- Top 5 Scores ---
+        const top5 = [...validEntries]
+          .sort((a, b) => Number(b.field2) - Number(a.field2))
+          .slice(0, 5);
+
+        const topTable = document.getElementById("topScores");
+        top5.forEach(entry => {
           const row = `<tr>
-            <td>${new Date(feed.created_at).toLocaleString()}</td>
-            <td>${feed.field1}</td>
-            <td>${feed.field2}</td>
+            <td>${entry.field1}</td>
+            <td>${entry.field2}</td>
+            <td>${new Date(entry.created_at).toLocaleString()}</td>
           </tr>`;
-          table.innerHTML += row;
+          topTable.innerHTML += row;
+        });
+
+        // --- 10 Most Recent Scores ---
+        const recent10 = validEntries
+          .slice(-10) // last 10 entries (chronological)
+          .reverse(); // newest first
+
+        const recentTable = document.getElementById("recentScores");
+        recent10.forEach(entry => {
+          const row = `<tr>
+            <td>${new Date(entry.created_at).toLocaleString()}</td>
+            <td>${entry.field1}</td>
+            <td>${entry.field2}</td>
+          </tr>`;
+          recentTable.innerHTML += row;
         });
       })
+      .catch(error => console.error("Error fetching data:", error));
+  </script>
+</body>
+</html>
+
       .catch(error => console.error("Error loading scoreboard:", error));
   </script>
 </body>
