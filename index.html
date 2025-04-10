@@ -15,27 +15,12 @@
   <h1>🎮 Dance Revolution Scoreboard</h1>
 
   <div>
-    <div class="section-title">🏆 Top 5 Highest Scores</div>
-    <table>
-      <thead>
-        <tr>
-          <th>Player ID</th>
-          <th>Score</th>
-          <th>Time</th>
-        </tr>
-      </thead>
-      <tbody id="topScores"></tbody>
-    </table>
-  </div>
-
-  <div>
-    <div class="section-title">🕒 10 Most Recent Scores</div>
+    <div class="section-title">🕒 10 Most Recent Entries</div>
     <table>
       <thead>
         <tr>
           <th>Time</th>
           <th>Player ID</th>
-          <th>Score</th>
         </tr>
       </thead>
       <tbody id="recentScores"></tbody>
@@ -45,7 +30,7 @@
   <script>
     const channelID = "2913791";
     const readAPIKey = "4JKR3JNN5CCA45UZ";
-    const fetchCount = 50; // Get more entries to ensure we can find the top 5
+    const fetchCount = 20;
 
     const url = `https://api.thingspeak.com/channels/${channelID}/feeds.json?api_key=${readAPIKey}&results=${fetchCount}`;
 
@@ -54,35 +39,19 @@
       .then(data => {
         const feeds = data.feeds;
 
-        // Filter out entries that are missing player ID or score
-        const validEntries = feeds.filter(f => f.field1 && f.field2 && !isNaN(f.field2));
+        // Only filter out if Player ID is missing
+        const validEntries = feeds.filter(f => f.field1);
 
-        // --- Top 5 Scores ---
-        const top5 = [...validEntries]
-          .sort((a, b) => Number(b.field2) - Number(a.field2))
-          .slice(0, 5);
-
-        const topTable = document.getElementById("topScores");
-        top5.forEach(entry => {
-          const row = `<tr>
-            <td>${entry.field1}</td>
-            <td>${entry.field2}</td>
-            <td>${new Date(entry.created_at).toLocaleString()}</td>
-          </tr>`;
-          topTable.innerHTML += row;
-        });
-
-        // --- 10 Most Recent Scores ---
+        // Show the 10 most recent
         const recent10 = validEntries
-          .slice(-10) // last 10 entries (chronological)
-          .reverse(); // newest first
+          .slice(-10)
+          .reverse();
 
         const recentTable = document.getElementById("recentScores");
         recent10.forEach(entry => {
           const row = `<tr>
             <td>${new Date(entry.created_at).toLocaleString()}</td>
             <td>${entry.field1}</td>
-            <td>${entry.field2}</td>
           </tr>`;
           recentTable.innerHTML += row;
         });
@@ -91,6 +60,7 @@
   </script>
 </body>
 </html>
+
 
       .catch(error => console.error("Error loading scoreboard:", error));
   </script>
