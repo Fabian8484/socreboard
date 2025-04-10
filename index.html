@@ -42,11 +42,12 @@
     </table>
   </div>
 
-  <script>
-    const channelID = "2913791";
-    const readAPIKey = "4JKR3JNN5CCA45UZ";
-    const fetchCount = 50;
+ <script>
+  const channelID = "2913791";
+  const readAPIKey = "4JKR3JNN5CCA45UZ";
+  const fetchCount = 50;
 
+  function fetchAndUpdate() {
     const url = `https://api.thingspeak.com/channels/${channelID}/feeds.json?api_key=${readAPIKey}&results=${fetchCount}`;
 
     fetch(url)
@@ -54,22 +55,24 @@
       .then(data => {
         const feeds = data.feeds;
 
-        // Keep entries that have a numeric score in field1
         const validEntries = feeds.filter(f => f.field1 && !isNaN(f.field1));
+
+        // Clear existing table rows
+        document.getElementById("topScores").innerHTML = "";
+        document.getElementById("recentScores").innerHTML = "";
 
         // --- Top 5 Scores ---
         const top5 = [...validEntries]
           .sort((a, b) => Number(b.field1) - Number(a.field1))
           .slice(0, 5);
 
-        const topTable = document.getElementById("topScores");
         top5.forEach(entry => {
           const row = `<tr>
-            <td>${entry.field2 || "—"}</td> <!-- Placeholder for ID -->
+            <td>${entry.field2 || "—"}</td>
             <td>${entry.field1}</td>
             <td>${new Date(entry.created_at).toLocaleString()}</td>
           </tr>`;
-          topTable.innerHTML += row;
+          document.getElementById("topScores").innerHTML += row;
         });
 
         // --- 10 Most Recent Scores ---
@@ -77,18 +80,25 @@
           .slice(-10)
           .reverse();
 
-        const recentTable = document.getElementById("recentScores");
         recent10.forEach(entry => {
           const row = `<tr>
             <td>${new Date(entry.created_at).toLocaleString()}</td>
-            <td>${entry.field2 || "—"}</td> <!-- Placeholder for ID -->
+            <td>${entry.field2 || "—"}</td>
             <td>${entry.field1}</td>
           </tr>`;
-          recentTable.innerHTML += row;
+          document.getElementById("recentScores").innerHTML += row;
         });
       })
       .catch(error => console.error("Error fetching data:", error));
-  </script>
+  }
+
+  // Fetch immediately on load
+  fetchAndUpdate();
+
+  // Then refresh every 15 seconds
+  setInterval(fetchAndUpdate, 15000);
+</script>
+
 </body>
 </html>
 
